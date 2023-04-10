@@ -36,13 +36,36 @@ class _HomePageState extends State<HomePage> {
               ),
               Container(
                 height: screenHeight * 0.23,
-                decoration: BoxDecoration(
+                decoration: const BoxDecoration(
                     shape: BoxShape.circle,
                     image: DecorationImage(
                       image: AssetImage('assets/images/profile.png'),
                     )),
               ),
             ],
+          ),
+          Container(
+            padding: EdgeInsets.symmetric(
+              horizontal: screenHeight * 0.02,
+              vertical: screenWidth * 0.02,
+            ),
+            margin: EdgeInsets.symmetric(horizontal: screenHeight * 0.02)
+                .copyWith(top: screenHeight * 0.03),
+            decoration: BoxDecoration(
+              border: Border.all(
+                color: Pallete.borderColor,
+                width: 2,
+              ),
+              borderRadius:
+                  BorderRadius.circular(15).copyWith(topLeft: Radius.zero),
+            ),
+            child: Text(
+              "Ara ara, How can I help you Sweetie 😘 ?",
+              style: TextStyle(
+                  color: Pallete.mainFontColor,
+                  fontFamily: 'Cera Pro',
+                  fontSize: screenHeight * 0.03),
+            ),
           ),
         ],
       ),
