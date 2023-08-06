@@ -2,6 +2,7 @@ import 'package:elaine/feature_box.dart';
 import 'package:elaine/openai_service.dart';
 import 'package:elaine/pallet.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_tts/flutter_tts.dart';
 import 'package:speech_to_text/speech_recognition_result.dart';
 import 'package:speech_to_text/speech_to_text.dart';
 
@@ -14,12 +15,21 @@ class HomePage extends StatefulWidget {
 
 class _HomePageState extends State<HomePage> {
   final speechToText = SpeechToText();
+  final flutterTts = FlutterTts();
   String lastWords = '';
   final OpenAIService openAIService = OpenAIService();
+  String? generatedContent;
+  String? generatedUrl;
   @override
   void initState() {
     super.initState();
     initSpeechToText();
+    initTextToSpeech();
+  }
+
+  Future<void> initTextToSpeech() async {
+    await flutterTts.setSharedInstance(true);
+    setState(() {});
   }
 
   Future<void> initSpeechToText() async {
@@ -42,6 +52,10 @@ class _HomePageState extends State<HomePage> {
       lastWords = result.recognizedWords;
       // print(lastWords);
     });
+  }
+
+  Future<void> systemSpeak(String content) async {
+    await flutterTts.speak(content);
   }
 
   @override
@@ -102,51 +116,67 @@ class _HomePageState extends State<HomePage> {
                     BorderRadius.circular(15).copyWith(topLeft: Radius.zero),
               ),
               child: Text(
-                "Ara ara, How can I help you Sweetie 😘 ?",
-                style: TextStyle(
-                    color: Pallete.mainFontColor,
-                    fontFamily: 'Cera Pro',
-                    fontSize: screenHeight * 0.03),
-              ),
-            ),
-            Container(
-              // color: Colors.amber,
-              margin: EdgeInsets.only(
-                top: screenHeight * 0.02,
-                left: screenWidth * 0.08,
-              ).copyWith(),
-              alignment: Alignment.centerLeft,
-              child: Text(
-                'Here are a few features',
+                generatedContent == null
+                    ? "Ara ara, How can I help you Sweetie 😘 ?"
+                    : generatedContent!,
                 style: TextStyle(
                   color: Pallete.mainFontColor,
-                  fontSize: screenHeight * 0.025,
                   fontFamily: 'Cera Pro',
-                  fontWeight: FontWeight.bold,
+                  fontSize: generatedContent == null
+                      ? screenHeight * 0.03
+                      : screenHeight * 0.02,
                 ),
               ),
             ),
-            Column(
-              children: const [
-                FeatureBox(
-                  headerText: "ChatGPT",
-                  bodyText:
-                      "A smarter way to stay organized and informed with ChatGPT.",
-                  color: Pallete.firstSuggestionBoxColor,
+            if (generatedUrl != null)
+              Image.network(
+                generatedUrl!,
+                fit: BoxFit.scaleDown,
+              ),
+            Visibility(
+              visible: generatedContent == null && generatedUrl == null,
+              child: Container(
+                // color: Colors.amber,
+                margin: EdgeInsets.only(
+                  top: screenHeight * 0.02,
+                  left: screenWidth * 0.08,
+                ).copyWith(),
+                alignment: Alignment.centerLeft,
+                child: Text(
+                  'Here are a few features',
+                  style: TextStyle(
+                    color: Pallete.mainFontColor,
+                    fontSize: screenHeight * 0.025,
+                    fontFamily: 'Cera Pro',
+                    fontWeight: FontWeight.bold,
+                  ),
                 ),
-                FeatureBox(
-                  headerText: "Dall-E",
-                  bodyText:
-                      "Get inspired and stay creative with your personal assistant powered by Dall-E.",
-                  color: Pallete.secondSuggestionBoxColor,
-                ),
-                FeatureBox(
-                  headerText: "Smart Voice Assistant",
-                  bodyText:
-                      "Get the best of both worlds with a boice assistant powered by Dall-E and ChatGPT.",
-                  color: Pallete.thirdSuggestionBoxColor,
-                ),
-              ],
+              ),
+            ),
+            Visibility(
+              visible: generatedContent == null && generatedUrl == null,
+              child: Column(
+                children: const [
+                  FeatureBox(
+                    headerText: "ChatGPT",
+                    bodyText:
+                        "A smarter way to stay organized and informed with ChatGPT.",
+                    color: Pallete.firstSuggestionBoxColor,
+                  ),
+                  FeatureBox(
+                    headerText: "Dall-E",
+                    bodyText:
+                        "Get inspired and stay creative with your personal assistant powered by Dall-E.",
+                    color: Pallete.secondSuggestionBoxColor,
+                  ),
+                  FeatureBox(
+                    headerText: "Smart Voice Assistant",
+                    bodyText:
+                        "Get the best of both worlds with a boice assistant powered by Dall-E and ChatGPT.",
+                    color: Pallete.thirdSuggestionBoxColor,
+                  ),
+                ],
+              ),
             ),
           ],
         ),
@@ -158,13 +188,22 @@ class _HomePageState extends State<HomePage> {
             await startListening();
           } else if (speechToText.isListening) {
             final speech = await openAIService.isArtPromptAPI(lastWords);
-            print(speech);
+            if (speech.contains('https')) {
+              generatedUrl = speech;
+              generatedContent = null;
+              setState(() {});
+            } else {
+              generatedUrl = null;
+              generatedContent = speech;
+              setState(() {});
+              await systemSpeak(speech);
+            }
             await stopListening();
           } else {
             initSpeechToText();
           }
         },
-        child: const Icon(Icons.mic),
+        child: Icon(speechToText.isListening ? Icons.stop : Icons.mic),
       ),
     );
   }
